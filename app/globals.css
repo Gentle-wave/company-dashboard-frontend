@@ -1,6 +1,11 @@
-*,
-*::before,
-*::after {
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-space-grotesk), 'Avenir Next', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
   box-sizing: border-box;
 }
 
@@ -11,15 +16,10 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 
-button {
-  cursor: pointer;
-}
-
-input,
-button,
-textarea {
-  font: inherit;
+::selection {
+  background: rgba(56, 189, 248, 0.35);
+  color: #f8fafc;
 }
