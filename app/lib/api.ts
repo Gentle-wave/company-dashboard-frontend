@@ -60,6 +60,31 @@ export async function authenticate(
   return (await response.json()) as AuthenticatedUser;
 }
 
+export async function authenticateWithFirebase(
+  idToken: string,
+  role?: Role,
+): Promise<AuthenticatedUser> {
+  const response = await fetch(`${API_BASE_URL}/auth/firebase/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      idToken,
+      role,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, 'Unable to authenticate with Firebase. Please try again.'),
+    );
+  }
+
+  return (await response.json()) as AuthenticatedUser;
+}
+
 export async function logout(): Promise<void> {
   await fetch(`${API_BASE_URL}/auth/logout`, {
     method: 'POST',

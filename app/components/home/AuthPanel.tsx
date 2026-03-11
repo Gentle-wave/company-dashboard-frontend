@@ -8,6 +8,7 @@ interface AuthPanelProps {
   loading: boolean;
   error: string | null;
   onAuthenticate: (credentials: AuthCredentials, mode: AuthMode) => Promise<boolean>;
+  onAuthenticateWithFirebase: () => Promise<boolean>;
   onLogout: () => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ export function AuthPanel({
   loading,
   error,
   onAuthenticate,
+  onAuthenticateWithFirebase,
   onLogout,
 }: AuthPanelProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -126,6 +128,18 @@ export function AuthPanel({
             Logout
           </button>
         </div>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => void onAuthenticateWithFirebase()}
+          className="w-full rounded-md border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Continue with Firebase (Google)
+        </button>
+        <p className="text-[11px] text-slate-400">
+          For first-time Firebase users, the selected persona is sent to backend provisioning.
+        </p>
       </form>
 
       {error && (

@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import * as api from '@/app/lib/api';
+import { getFirebaseIdTokenWithGooglePopup, signOutFirebaseClient } from '@/app/lib/firebase-auth';
 import {
   AuthCredentials,
   AuthMode,
@@ -38,6 +39,7 @@ interface DashboardContextValue {
     credentials: AuthCredentials,
     mode: AuthMode,
   ) => Promise<boolean>;
+  authenticateWithFirebase: () => Promise<boolean>;
   logoutUser: () => Promise<void>;
   submitCompanyForm: (form: CompanyFormState) => Promise<boolean>;
   fetchLatestForOwner: (ownerId: string) => Promise<void>;
@@ -113,12 +115,31 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     [activePersona],
   );
 
+  const authenticateWithFirebase = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const idToken = await getFirebaseIdTokenWithGooglePopup();
+      const authenticated = await api.authenticateWithFirebase(idToken, activePersona);
+      setUser(authenticated);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unexpected Firebase auth error.';
+      setError(message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [activePersona]);
+
   const logoutUser = useCallback(async () => {
     setError(null);
     setLoading(true);
 
     try {
       await api.logout();
+      await signOutFirebaseClient();
     } catch {
       // logout remains best-effort for UX flow
     } finally {
@@ -237,6 +258,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setSelectedOwnerId,
       clearError,
       authenticateUser,
+      authenticateWithFirebase,
       logoutUser,
       submitCompanyForm,
       fetchLatestForOwner,
@@ -254,6 +276,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       selectedOwnerId,
       clearError,
       authenticateUser,
+      authenticateWithFirebase,
       logoutUser,
       submitCompanyForm,
       fetchLatestForOwner,

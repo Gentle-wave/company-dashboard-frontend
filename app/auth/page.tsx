@@ -16,6 +16,7 @@ export default function AuthPage() {
     hydrated,
     error,
     authenticateUser,
+    authenticateWithFirebase,
     logoutUser,
   } = useDashboardContext();
 
@@ -34,6 +35,16 @@ export default function AuthPage() {
 
   const handleLogout = async () => {
     await logoutUser();
+  };
+
+  const handleFirebaseAuth = async () => {
+    const authenticated = await authenticateWithFirebase();
+
+    if (authenticated) {
+      router.push('/dashboard');
+    }
+
+    return authenticated;
   };
 
   if (!hydrated) {
@@ -66,6 +77,7 @@ export default function AuthPage() {
           loading={loading}
           error={error}
           onAuthenticate={handleAuthenticate}
+          onAuthenticateWithFirebase={handleFirebaseAuth}
           onLogout={handleLogout}
         />
 
