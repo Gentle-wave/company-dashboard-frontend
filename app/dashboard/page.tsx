@@ -9,6 +9,22 @@ import { API_BASE_URL } from '@/app/lib/config';
 
 export default function DashboardPage() {
   const { user, activePersona, latestCompanyInput, latestImage, selectedOwnerId } = useDashboardContext();
+  const previewHeaders = useMemo(() => {
+    const token =
+      user?.accessToken ??
+      (typeof window !== 'undefined'
+        ? window.localStorage.getItem('takehome-dashboard:accessToken') ?? undefined
+        : undefined);
+
+    if (!token) {
+      return undefined;
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }, [user?.accessToken]);
+
   const candidatePreviewUrls = useMemo(() => {
     if (!latestImage) {
       return [];
@@ -54,7 +70,10 @@ export default function DashboardPage() {
 
       for (const candidate of candidatePreviewUrls) {
         try {
-          const response = await fetch(candidate, { credentials: 'include' });
+          const response = await fetch(candidate, {
+            credentials: 'include',
+            headers: previewHeaders,
+          });
           if (!response.ok) {
             continue;
           }
@@ -95,7 +114,7 @@ export default function DashboardPage() {
         URL.revokeObjectURL(objectUrlToRevoke);
       }
     };
-  }, [candidatePreviewUrls, latestImage]);
+  }, [candidatePreviewUrls, latestImage, previewHeaders]);
 
   return (
     <div className="space-y-6">

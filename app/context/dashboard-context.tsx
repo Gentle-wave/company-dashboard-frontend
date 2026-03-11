@@ -47,6 +47,7 @@ interface DashboardContextValue {
 }
 
 const USER_STORAGE_KEY = 'takehome-dashboard:user';
+const TOKEN_STORAGE_KEY = 'takehome-dashboard:accessToken';
 
 const DashboardContext = createContext<DashboardContextValue | undefined>(undefined);
 
@@ -65,10 +66,21 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     try {
       const stored = window.localStorage.getItem(USER_STORAGE_KEY);
       if (stored) {
-        setUser(JSON.parse(stored) as AuthenticatedUser);
+        const parsedUser = JSON.parse(stored) as AuthenticatedUser;
+        const backupToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+
+        if (!parsedUser.accessToken && backupToken) {
+          setUser({
+            ...parsedUser,
+            accessToken: backupToken,
+          });
+        } else {
+          setUser(parsedUser);
+        }
       }
     } catch {
       window.localStorage.removeItem(USER_STORAGE_KEY);
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
     } finally {
       setHydrated(true);
     }
@@ -81,10 +93,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     if (user) {
       window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+
+      if (user.accessToken) {
+        window.localStorage.setItem(TOKEN_STORAGE_KEY, user.accessToken);
+      } else {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+
       return;
     }
 
     window.localStorage.removeItem(USER_STORAGE_KEY);
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
   }, [hydrated, user]);
 
   const clearError = useCallback(() => {
@@ -152,7 +172,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setSelectedOwnerId('');
       setLoading(false);
     }
-  }, []);
+  }, [user?.accessToken]);
 
   const submitCompanyForm = useCallback(
     async (form: CompanyFormState) => {

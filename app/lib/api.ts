@@ -13,10 +13,92 @@ interface ErrorPayload {
   message?: string | string[];
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+const TOKEN_STORAGE_KEY = 'takehome-dashboard:accessToken';
+const USER_STORAGE_KEY = 'takehome-dashboard:user';
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function getStringValue(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+function getStoredAccessToken(): string | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  const directToken = getStringValue(window.localStorage.getItem(TOKEN_STORAGE_KEY));
+  if (directToken) {
+    return directToken;
+  }
+
+  const storedUser = window.localStorage.getItem(USER_STORAGE_KEY);
+  if (!storedUser) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(storedUser) as unknown;
+    if (!isRecord(parsed)) {
+      return undefined;
+    }
+
+    return (
+      getStringValue(parsed.accessToken) ??
+      getStringValue(parsed.access_token) ??
+      getStringValue(parsed.token)
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeAuthenticatedUser(payload: unknown): AuthenticatedUser {
+  if (!isRecord(payload)) {
+    throw new Error('Invalid auth response payload.');
+  }
+
+  const root = payload;
+  const nestedUser = isRecord(root.user) ? root.user : undefined;
+  const source = nestedUser ?? root;
+
+  const id = getStringValue(source.id) ?? getStringValue(source.userId) ?? getStringValue(root.userId);
+  const email = getStringValue(source.email) ?? getStringValue(root.email);
+  const roleValue = getStringValue(source.role) ?? getStringValue(root.role);
+  const role = roleValue === 'USER_A' || roleValue === 'USER_B' ? roleValue : undefined;
+
+  if (!id || !email || !role) {
+    throw new Error('Auth response is missing required user fields.');
+  }
+
+  const accessToken =
+    getStringValue(root.accessToken) ??
+    getStringValue(root.access_token) ??
+    getStringValue(root.token) ??
+    getStringValue(root.jwt) ??
+    getStringValue(source.accessToken) ??
+    getStringValue(source.access_token) ??
+    getStringValue(source.token);
+
+  return {
+    id,
+    email,
+    role,
+    accessToken,
+  };
+}
+
 function buildAuthHeaders(token?: string, extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...extra };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const fallbackToken = getStoredAccessToken();
+  const resolvedToken = token ?? fallbackToken;
+
+  if (resolvedToken) {
+    headers['Authorization'] = `Bearer ${resolvedToken}`;
   }
   return headers;
 }
@@ -65,7 +147,7 @@ export async function authenticate(
     );
   }
 
-  return (await response.json()) as AuthenticatedUser;
+  return normalizeAuthenticatedUser(await response.json());
 }
 
 export async function authenticateWithFirebase(
@@ -90,7 +172,7 @@ export async function authenticateWithFirebase(
     );
   }
 
-  return (await response.json()) as AuthenticatedUser;
+  return normalizeAuthenticatedUser(await response.json());
 }
 
 export async function logout(token?: string): Promise<void> {
