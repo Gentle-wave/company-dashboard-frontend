@@ -122,7 +122,7 @@ export function AuthPanel({
           <button
             type="button"
             disabled={loading || !user}
-            onClick={() => void onLogout()}
+            onClick={onLogout}
             className="ml-auto inline-flex items-center justify-center rounded-md border border-red-700/70 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-900/40 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Logout
@@ -132,7 +132,7 @@ export function AuthPanel({
         <button
           type="button"
           disabled={loading}
-          onClick={() => void onAuthenticateWithFirebase()}
+          onClick={onAuthenticateWithFirebase}
           className="w-full rounded-md border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Continue with Firebase (Google)

@@ -116,17 +116,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   );
 
   const authenticateWithFirebase = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-
     try {
+      // Trigger popup immediately before any state updates to preserve user gesture
       const idToken = await getFirebaseIdTokenWithGooglePopup();
+      
+      setError(null);
+      setLoading(true);
+
       const authenticated = await api.authenticateWithFirebase(idToken, activePersona);
       setUser(authenticated);
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unexpected Firebase auth error.';
       setError(message);
+      setLoading(false);
       return false;
     } finally {
       setLoading(false);
