@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     Company Relay <span className="text-cyan-300">Control Deck</span>
                   </h1>
                   <p className="hidden text-xs text-slate-300/80 md:block">
-                    Next.js app router · Tailwind CSS · Role-based workflows
+                    Role-based workflows
                   </p>
                 </div>
               </header>

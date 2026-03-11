@@ -1,4 +1,4 @@
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 
 import { AuthCredentials, AuthMode, AuthenticatedUser, Role } from '@/app/types/dashboard';
 
@@ -19,6 +19,8 @@ export function AuthPanel({
   onAuthenticate,
   onLogout,
 }: AuthPanelProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -34,6 +36,7 @@ export function AuthPanel({
 
     if (wasSuccessful) {
       event.currentTarget.reset();
+      setShowPassword(false);
     }
   };
 
@@ -76,15 +79,26 @@ export function AuthPanel({
           <label className="text-xs font-medium text-slate-200" htmlFor="password">
             Password
           </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            minLength={8}
-            required
-            placeholder="Minimum 8 characters"
-            className="w-full rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1.5 text-sm text-slate-50 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-          />
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              minLength={8}
+              required
+              placeholder="Minimum 8 characters"
+              className="w-full rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1.5 pr-16 text-sm text-slate-50 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-2 my-auto h-6 rounded px-2 text-[11px] font-medium text-slate-300 hover:bg-slate-800"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between gap-3 pt-1">
           <button
