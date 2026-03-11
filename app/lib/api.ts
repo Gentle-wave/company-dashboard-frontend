@@ -13,6 +13,14 @@ interface ErrorPayload {
   message?: string | string[];
 }
 
+function buildAuthHeaders(token?: string, extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...extra };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 async function getErrorMessage(response: Response, fallback: string): Promise<string> {
   const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
   const message = payload?.message;
@@ -85,20 +93,19 @@ export async function authenticateWithFirebase(
   return (await response.json()) as AuthenticatedUser;
 }
 
-export async function logout(): Promise<void> {
+export async function logout(token?: string): Promise<void> {
   await fetch(`${API_BASE_URL}/auth/logout`, {
     method: 'POST',
     credentials: 'include',
+    headers: buildAuthHeaders(token),
   });
 }
 
-export async function submitCompanyInput(form: CompanyFormState): Promise<CompanyInput> {
+export async function submitCompanyInput(form: CompanyFormState, token?: string): Promise<CompanyInput> {
   const response = await fetch(`${API_BASE_URL}/company-input`, {
     method: 'POST',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: buildAuthHeaders(token, { 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       companyName: form.companyName,
       numberOfUsers: Number(form.numberOfUsers),
@@ -115,9 +122,10 @@ export async function submitCompanyInput(form: CompanyFormState): Promise<Compan
   return (await response.json()) as CompanyInput;
 }
 
-export async function fetchLatestCompany(ownerId: string): Promise<CompanyInput | null> {
+export async function fetchLatestCompany(ownerId: string, token?: string): Promise<CompanyInput | null> {
   const response = await fetch(`${API_BASE_URL}/company-input/latest/${ownerId}`, {
     credentials: 'include',
+    headers: buildAuthHeaders(token),
   });
 
   if (!response.ok) {
@@ -127,9 +135,10 @@ export async function fetchLatestCompany(ownerId: string): Promise<CompanyInput 
   return (await response.json()) as CompanyInput | null;
 }
 
-export async function fetchLatestImage(ownerId: string): Promise<ImageUpload | null> {
+export async function fetchLatestImage(ownerId: string, token?: string): Promise<ImageUpload | null> {
   const response = await fetch(`${API_BASE_URL}/uploads/latest/${ownerId}`, {
     credentials: 'include',
+    headers: buildAuthHeaders(token),
   });
 
   if (!response.ok) {
@@ -139,7 +148,7 @@ export async function fetchLatestImage(ownerId: string): Promise<ImageUpload | n
   return (await response.json()) as ImageUpload | null;
 }
 
-export async function uploadImage(file: File, ownerId: string): Promise<ImageUpload> {
+export async function uploadImage(file: File, ownerId: string, token?: string): Promise<ImageUpload> {
   const payload = new FormData();
   payload.append('file', file);
   payload.append('ownerId', ownerId);
@@ -147,6 +156,7 @@ export async function uploadImage(file: File, ownerId: string): Promise<ImageUpl
   const response = await fetch(`${API_BASE_URL}/uploads`, {
     method: 'POST',
     credentials: 'include',
+    headers: buildAuthHeaders(token),
     body: payload,
   });
 

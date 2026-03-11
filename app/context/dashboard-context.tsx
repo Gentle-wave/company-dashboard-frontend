@@ -141,7 +141,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setLoading(true);
 
     try {
-      await api.logout();
+      await api.logout(user?.accessToken);
       await signOutFirebaseClient();
     } catch {
       // logout remains best-effort for UX flow
@@ -165,7 +165,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setLoading(true);
 
       try {
-        const company = await api.submitCompanyInput(form);
+        const company = await api.submitCompanyInput(form, user.accessToken);
         setLatestCompanyInput(company);
         return true;
       } catch (err) {
@@ -196,8 +196,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
       try {
         const [company, image] = await Promise.all([
-          api.fetchLatestCompany(ownerId),
-          api.fetchLatestImage(ownerId),
+          api.fetchLatestCompany(ownerId, user.accessToken),
+          api.fetchLatestImage(ownerId, user.accessToken),
         ]);
 
         setLatestCompanyInput(company);
@@ -231,7 +231,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setUploading(true);
 
       try {
-        const image = await api.uploadImage(file, ownerId);
+        const image = await api.uploadImage(file, ownerId, user.accessToken);
         setSelectedOwnerId(ownerId);
         setLatestImage(image);
         return true;

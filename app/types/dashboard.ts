@@ -11,6 +11,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   role: Role;
+  accessToken?: string;
 }
 
 export interface CompanyInput {
