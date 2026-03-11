@@ -34,4 +34,6 @@ export interface ImageUpload {
   mimetype: string;
   size: number;
   createdAt: string;
+  url?: string;
+  path?: string;
 }

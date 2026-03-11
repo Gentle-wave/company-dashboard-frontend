@@ -28,6 +28,8 @@ export default function AuthPage() {
     if (authenticated) {
       router.push('/dashboard');
     }
+
+    return authenticated;
   };
 
   const handleLogout = async () => {

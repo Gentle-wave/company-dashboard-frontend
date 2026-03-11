@@ -7,7 +7,7 @@ interface AuthPanelProps {
   user: AuthenticatedUser | null;
   loading: boolean;
   error: string | null;
-  onAuthenticate: (credentials: AuthCredentials, mode: AuthMode) => Promise<void>;
+  onAuthenticate: (credentials: AuthCredentials, mode: AuthMode) => Promise<boolean>;
   onLogout: () => Promise<void>;
 }
 
@@ -30,7 +30,11 @@ export function AuthPanel({
     const submitter = nativeEvent.submitter as HTMLButtonElement | null;
     const mode = submitter?.value === 'register' ? 'register' : 'login';
 
-    await onAuthenticate({ email, password }, mode);
+    const wasSuccessful = await onAuthenticate({ email, password }, mode);
+
+    if (wasSuccessful) {
+      event.currentTarget.reset();
+    }
   };
 
   return (

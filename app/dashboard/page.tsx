@@ -1,12 +1,101 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import { SessionSnapshot } from '@/app/components/home/SessionSnapshot';
 import { useDashboardContext } from '@/app/context/dashboard-context';
+import { API_BASE_URL } from '@/app/lib/config';
 
 export default function DashboardPage() {
   const { user, activePersona, latestCompanyInput, latestImage, selectedOwnerId } = useDashboardContext();
+  const candidatePreviewUrls = useMemo(() => {
+    if (!latestImage) {
+      return [];
+    }
+
+    const normalizeUrl = (value?: string) => {
+      if (!value) {
+        return null;
+      }
+
+      if (/^https?:\/\//i.test(value)) {
+        return value;
+      }
+
+      return `${API_BASE_URL}${value.startsWith('/') ? value : `/${value}`}`;
+    };
+
+    const urls = [
+      normalizeUrl(latestImage.url),
+      normalizeUrl(latestImage.path),
+      `${API_BASE_URL}/uploads/${latestImage.id}`,
+      `${API_BASE_URL}/uploads/${encodeURIComponent(latestImage.filename)}`,
+    ];
+
+    return [...new Set(urls.filter((url): url is string => Boolean(url)))];
+  }, [latestImage]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrlToRevoke: string | null = null;
+
+    const resolvePreview = async () => {
+      if (!latestImage || candidatePreviewUrls.length === 0) {
+        setPreviewUrl(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+      setPreviewUrl(null);
+
+      for (const candidate of candidatePreviewUrls) {
+        try {
+          const response = await fetch(candidate, { credentials: 'include' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const blob = await response.blob();
+          const coercedBlob =
+            blob.type.startsWith('image/') || !latestImage.mimetype
+              ? blob
+              : new Blob([blob], { type: latestImage.mimetype });
+
+          if (!coercedBlob.type.startsWith('image/')) {
+            continue;
+          }
+
+          objectUrlToRevoke = URL.createObjectURL(coercedBlob);
+
+          if (active) {
+            setPreviewUrl(objectUrlToRevoke);
+            setPreviewLoading(false);
+          }
+          return;
+        } catch {
+          // try next candidate
+        }
+      }
+
+      if (active) {
+        setPreviewUrl(null);
+        setPreviewLoading(false);
+      }
+    };
+
+    void resolvePreview();
+
+    return () => {
+      active = false;
+      if (objectUrlToRevoke) {
+        URL.revokeObjectURL(objectUrlToRevoke);
+      }
+    };
+  }, [candidatePreviewUrls, latestImage]);
 
   return (
     <div className="space-y-6">
@@ -58,9 +147,28 @@ export default function DashboardPage() {
             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
               <p className="text-slate-400">Latest upload</p>
               {latestImage ? (
-                <p className="mt-1 text-slate-100">
-                  {latestImage.filename} ({(latestImage.size / 1024).toFixed(1)} KB)
-                </p>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="min-w-0 text-slate-100">
+                    <p className="truncate">{latestImage.filename}</p>
+                    <p className="text-slate-400">{(latestImage.size / 1024).toFixed(1)} KB</p>
+                  </div>
+
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={latestImage.filename}
+                      className="h-11 w-11 shrink-0 rounded-md border border-white/10 object-cover"
+                    />
+                  ) : previewLoading ? (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-[10px] text-slate-400">
+                      ...
+                    </div>
+                  ) : (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-[10px] text-slate-400">
+                      N/A
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="mt-1 text-slate-500">No image metadata loaded.</p>
               )}

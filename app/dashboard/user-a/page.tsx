@@ -23,7 +23,11 @@ export default function UserAPage() {
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      await submitCompanyForm(companyForm);
+      const wasSuccessful = await submitCompanyForm(companyForm);
+
+      if (wasSuccessful) {
+        setCompanyForm(INITIAL_FORM);
+      }
     },
     [companyForm, submitCompanyForm],
   );

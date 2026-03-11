@@ -37,11 +37,11 @@ interface DashboardContextValue {
   authenticateUser: (
     credentials: AuthCredentials,
     mode: AuthMode,
-  ) => Promise<AuthenticatedUser | null>;
+  ) => Promise<boolean>;
   logoutUser: () => Promise<void>;
-  submitCompanyForm: (form: CompanyFormState) => Promise<void>;
+  submitCompanyForm: (form: CompanyFormState) => Promise<boolean>;
   fetchLatestForOwner: (ownerId: string) => Promise<void>;
-  uploadImageForOwner: (file: File | null, ownerId: string) => Promise<void>;
+  uploadImageForOwner: (file: File | null, ownerId: string) => Promise<boolean>;
 }
 
 const USER_STORAGE_KEY = 'takehome-dashboard:user';
@@ -95,13 +95,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setLoading(true);
 
       try {
-        const authenticated = await api.authenticate(credentials, mode, activePersona);
+        const authenticated = await api.authenticate(
+          credentials,
+          mode,
+          mode === 'register' ? activePersona : undefined,
+        );
         setUser(authenticated);
-        return authenticated;
+        return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unexpected error during auth.';
         setError(message);
-        return null;
+        return false;
       } finally {
         setLoading(false);
       }
@@ -130,7 +134,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     async (form: CompanyFormState) => {
       if (!user || user.role !== 'USER_A') {
         setError('You must be logged in as User A to submit this form.');
-        return;
+        return false;
       }
 
       setError(null);
@@ -139,9 +143,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       try {
         const company = await api.submitCompanyInput(form);
         setLatestCompanyInput(company);
+        return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unexpected error.';
         setError(message);
+        return false;
       } finally {
         setLoading(false);
       }
@@ -186,15 +192,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     async (file: File | null, ownerId: string) => {
       if (!user || user.role !== 'USER_B') {
         setError('You must be logged in as User B to upload an image.');
-        return;
+        return false;
       }
       if (!file) {
         setError('Please choose an image file.');
-        return;
+        return false;
       }
       if (!ownerId) {
         setError('Please enter the User A ID you are uploading for.');
-        return;
+        return false;
       }
 
       setError(null);
@@ -204,9 +210,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const image = await api.uploadImage(file, ownerId);
         setSelectedOwnerId(ownerId);
         setLatestImage(image);
+        return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unexpected error while uploading.';
         setError(message);
+        return false;
       } finally {
         setUploading(false);
       }

@@ -29,7 +29,11 @@ export default function UserBPage() {
       const formData = new FormData(event.currentTarget);
       const file = formData.get('file');
       const ownerId = String(formData.get('ownerId') ?? '');
-      await uploadImageForOwner(file instanceof File ? file : null, ownerId);
+      const wasSuccessful = await uploadImageForOwner(file instanceof File ? file : null, ownerId);
+
+      if (wasSuccessful) {
+        event.currentTarget.reset();
+      }
     },
     [uploadImageForOwner],
   );

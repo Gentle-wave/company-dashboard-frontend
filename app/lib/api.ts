@@ -27,19 +27,28 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
 export async function authenticate(
   credentials: AuthCredentials,
   mode: AuthMode,
-  role: Role,
+  role?: Role,
 ): Promise<AuthenticatedUser> {
+  const authPayload: {
+    email: string;
+    password: string;
+    role?: Role;
+  } = {
+    email: credentials.email,
+    password: credentials.password,
+  };
+
+  if (mode === 'register' && role) {
+    authPayload.role = role;
+  }
+
   const response = await fetch(`${API_BASE_URL}/auth/${mode}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      email: credentials.email,
-      password: credentials.password,
-      role,
-    }),
+    body: JSON.stringify(authPayload),
   });
 
   if (!response.ok) {
